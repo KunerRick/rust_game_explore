@@ -4,7 +4,7 @@ use bracket_lib::{
 };
 
 pub(crate) struct Player {
-    x: i32,
+    pub(crate) x: i32,
     pub(crate) y: i32,
     init_x: i32,
     init_y: i32,
