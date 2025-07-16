@@ -15,6 +15,10 @@ enum Dir {
     Right,
     Up,
     Down,
+    LeftUp,
+    RightUp,
+    LeftDown,
+    RightDown,
     Center,
 }
 
@@ -24,6 +28,10 @@ fn mov(dir: Dir) -> Point {
         Dir::Right => Point::new(1, 0),
         Dir::Up => Point::new(0, -1),
         Dir::Down => Point::new(0, 1),
+        Dir::LeftUp => Point::new(-1, -1),
+        Dir::RightUp => Point::new(1, -1),
+        Dir::LeftDown => Point::new(-1, 1),
+        Dir::RightDown => Point::new(1, 1),
         Dir::Center => Point::zero(),
     }
 }
@@ -41,11 +49,34 @@ impl Player {
     pub fn update_handle(&mut self, ctx: &BTerm, map: &Map) {
         let mut active_gamepad = None;
         while let Some(ev) = self.gilrs.next_event() {
+            match ev.event {
+                EventType::AxisChanged(Axis::LeftStickX, val, _) => {
+                    self.gilrs_axios.0 = val;
+                }
+                EventType::AxisChanged(Axis::LeftStickY, val, _) => {
+                    self.gilrs_axios.1 = -val;
+                }
+                _ => (),
+            }
             active_gamepad = Some(ev);
         }
 
-        // TODO: 待实现斜向走位，适配手柄
-        if let Some(Event {
+        let (x, y) = self.gilrs_axios;
+        if x.abs() != 0.0 || y.abs() != 0.0 {
+            let px = match x {
+                n if n > 0.2 => 1,
+                n if n < -0.2 => -1,
+                _ => 0,
+            };
+            let py = match y {
+                n if n > 0.2 => 1,
+                n if n < -0.2 => -1,
+                _ => 0,
+            };
+            self.gilrs_delta = Point::new(px, py);
+
+            println!(" axios {:?} {:?}", self.gilrs_delta, self.gilrs_axios);
+        } else if let Some(Event {
             id, event, time, ..
         }) = active_gamepad
         {
@@ -82,45 +113,40 @@ impl Player {
                         Some(mov(Dir::Center))
                     }
                 }
+                EventType::AxisChanged(Axis::LeftStickX, val, _) => Some(mov(Dir::Center)),
+                EventType::AxisChanged(Axis::LeftStickY, val, _) => Some(mov(Dir::Center)),
                 EventType::ButtonChanged(_, _, _) => None,
-                // 处理摇杆输入（需设置死区）
-                EventType::AxisChanged(Axis::LeftStickX, val, _) => {
-                    self.gilrs_axios.0 = val;
-                    if val.abs() > 0.02 {
-                        if val > 0.0 {
-                            Some(mov(Dir::Right))
-                        } else {
-                            Some(mov(Dir::Left))
-                        }
-                    } else {
-                        Some(mov(Dir::Center))
-                    }
-                }
-                EventType::AxisChanged(Axis::LeftStickY, val, _) => {
-                    self.gilrs_axios.1 = -val;
-                    if val.abs() > 0.02 {
-                        if val > 0.0 {
-                            Some(mov(Dir::Up))
-                        } else {
-                            Some(mov(Dir::Down))
-                        }
-                    } else {
-                        Some(mov(Dir::Center))
-                    }
-                }
                 _ => None,
             };
-
-            println!("{:?} {:?} {:?}", event, delta, self.gilrs_axios);
 
             if let Some(v) = delta {
                 self.gilrs_delta = v
             }
+
+            println!(" {:?} {:?}", self.gilrs_delta, self.gilrs_axios);
         }
 
-        let new_pos = self.position + self.gilrs_delta;
-        if map.can_enter_tile(new_pos) {
-            self.position = new_pos;
+        let p = self.position + self.gilrs_delta;
+        let Point { x, y } = self.gilrs_delta;
+        if x != 0 && y != 0 {
+            // 三种情况都尝试一下
+            let p = self.position + Point::new(x, y);
+            println!("p1 {p:?}");
+            if map.can_enter_tile(p) {
+                return self.position = p;
+            }
+            let p = self.position + Point::new(x, 0);
+            println!("p2 {p:?}");
+            if map.can_enter_tile(p) {
+                return self.position = p;
+            }
+            let p = self.position + Point::new(0, y);
+            println!("p3 {p:?}");
+            if map.can_enter_tile(p) {
+                return self.position = p;
+            }
+        } else if map.can_enter_tile(p) {
+            self.position = p;
         }
     }
 
