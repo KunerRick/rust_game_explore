@@ -15,11 +15,6 @@ enum Dir {
     Right,
     Up,
     Down,
-    LeftUp,
-    RightUp,
-    LeftDown,
-    RightDown,
-    Center,
 }
 
 fn mov(dir: Dir) -> Point {
@@ -28,11 +23,6 @@ fn mov(dir: Dir) -> Point {
         Dir::Right => Point::new(1, 0),
         Dir::Up => Point::new(0, -1),
         Dir::Down => Point::new(0, 1),
-        Dir::LeftUp => Point::new(-1, -1),
-        Dir::RightUp => Point::new(1, -1),
-        Dir::LeftDown => Point::new(-1, 1),
-        Dir::RightDown => Point::new(1, 1),
-        Dir::Center => Point::zero(),
     }
 }
 
@@ -46,10 +36,69 @@ impl Player {
         }
     }
 
+    fn try_move(&mut self, map: &Map) {
+        // 更新 gilrs_delta
+        let px = match self.gilrs_axios.0 {
+            n if n > 0.4 => 1,
+            n if n < -0.4 => -1,
+            _ => 0,
+        };
+        let py = match self.gilrs_axios.1 {
+            n if n > 0.4 => 1,
+            n if n < -0.4 => -1,
+            _ => 0,
+        };
+        self.gilrs_delta = Point::new(px, py);
+
+        // 尝试位移
+        let Point { x, y } = self.gilrs_delta;
+        let p = self.position + Point::new(x, y);
+        if map.can_enter_tile(p) {
+            return self.position = p;
+        }
+        let p = self.position + Point::new(x, 0);
+        if map.can_enter_tile(p) {
+            return self.position = p;
+        }
+        let p = self.position + Point::new(0, y);
+        if map.can_enter_tile(p) {
+            return self.position = p;
+        }
+    }
+
     pub fn update_handle(&mut self, ctx: &BTerm, map: &Map) {
-        let mut active_gamepad = None;
+        // 目前只用到了方向相关信息，后续完善
         while let Some(ev) = self.gilrs.next_event() {
+            // 这里有可能包含了组合键，这里需要将其进一步归类为 方向控制，按键信息
             match ev.event {
+                EventType::ButtonChanged(Button::DPadUp, val, _) => {
+                    if val > 0.1 {
+                        self.gilrs_axios.1 = -1.0;
+                    } else {
+                        self.gilrs_axios.1 = 0.0;
+                    }
+                }
+                EventType::ButtonChanged(Button::DPadDown, val, _) => {
+                    if val > 0.1 {
+                        self.gilrs_axios.1 = 1.0;
+                    } else {
+                        self.gilrs_axios.1 = 0.0;
+                    }
+                }
+                EventType::ButtonChanged(Button::DPadLeft, val, _) => {
+                    if val > 0.1 {
+                        self.gilrs_axios.0 = -1.0;
+                    } else {
+                        self.gilrs_axios.0 = 0.0;
+                    }
+                }
+                EventType::ButtonChanged(Button::DPadRight, val, _) => {
+                    if val > 0.1 {
+                        self.gilrs_axios.0 = 1.0;
+                    } else {
+                        self.gilrs_axios.0 = 0.0;
+                    }
+                }
                 EventType::AxisChanged(Axis::LeftStickX, val, _) => {
                     self.gilrs_axios.0 = val;
                 }
@@ -58,96 +107,9 @@ impl Player {
                 }
                 _ => (),
             }
-            active_gamepad = Some(ev);
         }
-
-        let (x, y) = self.gilrs_axios;
-        if x.abs() != 0.0 || y.abs() != 0.0 {
-            let px = match x {
-                n if n > 0.2 => 1,
-                n if n < -0.2 => -1,
-                _ => 0,
-            };
-            let py = match y {
-                n if n > 0.2 => 1,
-                n if n < -0.2 => -1,
-                _ => 0,
-            };
-            self.gilrs_delta = Point::new(px, py);
-
-            println!(" axios {:?} {:?}", self.gilrs_delta, self.gilrs_axios);
-        } else if let Some(Event {
-            id, event, time, ..
-        }) = active_gamepad
-        {
-            let delta: Option<Point> = match event {
-                EventType::ButtonPressed(Button::DPadUp, _) => Some(mov(Dir::Up)),
-                EventType::ButtonChanged(Button::DPadUp, val, _) => {
-                    if val > 0.1 {
-                        Some(mov(Dir::Up))
-                    } else {
-                        Some(mov(Dir::Center))
-                    }
-                }
-                EventType::ButtonPressed(Button::DPadDown, _) => Some(mov(Dir::Down)),
-                EventType::ButtonChanged(Button::DPadDown, val, _) => {
-                    if val > 0.1 {
-                        Some(mov(Dir::Down))
-                    } else {
-                        Some(mov(Dir::Center))
-                    }
-                }
-                EventType::ButtonPressed(Button::DPadLeft, _) => Some(mov(Dir::Left)),
-                EventType::ButtonChanged(Button::DPadLeft, val, _) => {
-                    if val > 0.1 {
-                        Some(mov(Dir::Left))
-                    } else {
-                        Some(mov(Dir::Center))
-                    }
-                }
-                EventType::ButtonPressed(Button::DPadRight, _) => Some(mov(Dir::Right)),
-                EventType::ButtonChanged(Button::DPadRight, val, _) => {
-                    if val > 0.1 {
-                        Some(mov(Dir::Right))
-                    } else {
-                        Some(mov(Dir::Center))
-                    }
-                }
-                EventType::AxisChanged(Axis::LeftStickX, val, _) => Some(mov(Dir::Center)),
-                EventType::AxisChanged(Axis::LeftStickY, val, _) => Some(mov(Dir::Center)),
-                EventType::ButtonChanged(_, _, _) => None,
-                _ => None,
-            };
-
-            if let Some(v) = delta {
-                self.gilrs_delta = v
-            }
-
-            println!(" {:?} {:?}", self.gilrs_delta, self.gilrs_axios);
-        }
-
-        let p = self.position + self.gilrs_delta;
-        let Point { x, y } = self.gilrs_delta;
-        if x != 0 && y != 0 {
-            // 三种情况都尝试一下
-            let p = self.position + Point::new(x, y);
-            println!("p1 {p:?}");
-            if map.can_enter_tile(p) {
-                return self.position = p;
-            }
-            let p = self.position + Point::new(x, 0);
-            println!("p2 {p:?}");
-            if map.can_enter_tile(p) {
-                return self.position = p;
-            }
-            let p = self.position + Point::new(0, y);
-            println!("p3 {p:?}");
-            if map.can_enter_tile(p) {
-                return self.position = p;
-            }
-        } else if map.can_enter_tile(p) {
-            self.position = p;
-        }
+        self.try_move(map);
+        // TODO 其他按键
     }
 
     pub fn update(&mut self, ctx: &BTerm, map: &Map) {
