@@ -42,15 +42,38 @@ impl Map {
 }
 
 impl SceneComp for Map {
-    fn render(&self, ctx: &mut BTerm) {
-        for y in 0..SCREEN_HEIGHT {
-            for x in 0..SCREEN_WIDTH {
-                let idx = map_idx(x, y);
-                match self.tiles[idx] {
-                    TileType::Floor => {
-                        ctx.set(x, y, RGB::from_u8(100, 150, 130), BLACK, to_cp437('.'))
+    fn render(&self, ctx: &mut BTerm, camera: &Camera) {
+        // 激活地图层
+        ctx.set_active_console(0);
+        // 遍历相机范围内所有的点，判断是否还在地图上；
+        for y in camera.top_y..camera.bottom_y {
+            for x in camera.left_x..camera.right_x {
+                // 这里x,y 是相对于地图的坐标点
+                if self.in_bounds(Point::new(x, y)) {
+                    let idx = map_idx(x, y);
+                    // 获取id
+                    match self.tiles[idx] {
+                        TileType::Floor => {
+                            // 这里x,y是世界坐标系
+                            // 但视图绘制是从相机边界开始的，要转换到相机的坐标系上
+                            // 如： x:[51， 91] ，那么实际绘制得从0开始，即
+                            //  x: [0, 40], 那其实就是相对于左边界求差值。
+                            ctx.set(
+                                x - camera.left_x,
+                                y - camera.top_y,
+                                RGB::from_u8(100, 150, 130),
+                                BLACK,
+                                to_cp437('.'),
+                            )
+                        }
+                        TileType::Wall => ctx.set(
+                            x - camera.left_x,
+                            y - camera.top_y,
+                            RGB::from_u8(151, 72, 0),
+                            BLACK,
+                            to_cp437('#'),
+                        ),
                     }
-                    TileType::Wall => ctx.set(x, y, RGB::from_u8(151, 72, 0), BLACK, to_cp437('#')),
                 }
             }
         }

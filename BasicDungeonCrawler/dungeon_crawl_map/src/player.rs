@@ -36,7 +36,7 @@ impl Player {
         }
     }
 
-    fn try_move(&mut self, map: &Map) {
+    fn try_move(&mut self, map: &Map, camera: &mut Camera) {
         // 更新 gilrs_delta
         let px = match self.gilrs_axios.0 {
             n if n > 0.4 => 1,
@@ -54,19 +54,25 @@ impl Player {
         let Point { x, y } = self.gilrs_delta;
         let p = self.position + Point::new(x, y);
         if map.can_enter_tile(p) {
-            return self.position = p;
+            self.position = p;
+            camera.on_player_move(p);
+            return;
         }
         let p = self.position + Point::new(x, 0);
         if map.can_enter_tile(p) {
-            return self.position = p;
+            self.position = p;
+            camera.on_player_move(p);
+            return;
         }
         let p = self.position + Point::new(0, y);
         if map.can_enter_tile(p) {
-            return self.position = p;
+            self.position = p;
+            camera.on_player_move(p);
+            return;
         }
     }
 
-    pub fn update_handle(&mut self, ctx: &BTerm, map: &Map) {
+    pub fn update_handle(&mut self, ctx: &BTerm, map: &Map, camera: &mut Camera) {
         // 目前只用到了方向相关信息，后续完善
         while let Some(ev) = self.gilrs.next_event() {
             // 这里有可能包含了组合键，这里需要将其进一步归类为 方向控制，按键信息
@@ -108,11 +114,11 @@ impl Player {
                 _ => (),
             }
         }
-        self.try_move(map);
+        self.try_move(map, camera);
         // TODO 其他按键
     }
 
-    pub fn update(&mut self, ctx: &BTerm, map: &Map) {
+    pub fn update(&mut self, ctx: &BTerm, map: &Map, camera: &mut Camera) {
         if let Some(key) = ctx.key {
             let delta = match key {
                 VirtualKeyCode::Up | VirtualKeyCode::W => mov(Dir::Up),
@@ -124,15 +130,20 @@ impl Player {
             let new_pos = self.position + delta;
             if map.can_enter_tile(new_pos) {
                 self.position = new_pos;
+                camera.on_player_move(new_pos);
             }
         }
     }
 }
 impl SceneComp for Player {
-    fn render(&self, ctx: &mut BTerm) {
+    fn render(&self, ctx: &mut BTerm, camera: &Camera) {
+        // 更新角色层
+        ctx.set_active_console(1);
+
+        // 更新用户信息
         ctx.set(
-            self.position.x,
-            self.position.y,
+            self.position.x - camera.left_x,
+            self.position.y - camera.top_y,
             WHITE,
             BLACK,
             to_cp437('@'),
