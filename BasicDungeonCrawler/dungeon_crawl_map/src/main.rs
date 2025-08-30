@@ -1,9 +1,10 @@
 mod camera;
+mod components;
 mod map;
 mod map_builder;
 mod model;
-mod player;
 mod prelude;
+mod spawner;
 mod state;
 
 use crate::{prelude::*, state::State};
@@ -15,7 +16,6 @@ fn main() -> BError {
         .with_dimensions(DISPLAY_WIDTH, DISPLAY_HEIGHT)
         .with_tile_dimensions(32, 32)
         .with_resource_path("resources/")
-        // TODO:后续了解下字符是如何映射的？
         .with_font("dungeonfont.png", 32, 32)
         // 绘制地图
         .with_simple_console(DISPLAY_WIDTH, DISPLAY_HEIGHT, "dungeonfont.png")

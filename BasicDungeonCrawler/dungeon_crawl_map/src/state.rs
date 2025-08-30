@@ -1,22 +1,24 @@
 use crate::prelude::*;
 
 pub struct State {
-    map: Map,
-    player: Player,
-    camera: Camera,
+    ecs: World,
+    resources: Resources,
+    systems: Schedule,
 }
 
 impl State {
     pub fn new() -> Self {
+        let mut esc = World::default();
+        let mut resources = Resources::default();
         // 生成地图
         let mut rng = RandomNumberGenerator::new();
         let map_builder = MapBuilder::new(&mut rng);
-
-        Self {
-            map: map_builder.map,
-            player: Player::new(map_builder.player_start),
-            camera: Camera::new(map_builder.player_start),
-        }
+        // 将地图插入资源
+        resources.insert(map_builder.map);
+        // 将相机插入资源
+        resources.insert(Camera::new(map_builder.player_start));
+        todo!()
+        // Self { ecs, resources, systems: build_scheduler() }
     }
 }
 
@@ -26,9 +28,6 @@ impl GameState for State {
         ctx.cls();
         ctx.set_active_console(1);
         ctx.cls();
-        self.player.update(ctx, &self.map, &mut self.camera);
-        self.player.update_handle(ctx, &self.map, &mut self.camera);
-        self.map.render(ctx, &self.camera);
-        self.player.render(ctx, &self.camera);
+        //TODO: Execute Systems
     }
 }
