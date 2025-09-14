@@ -6,7 +6,7 @@ mod model;
 mod prelude;
 mod spawner;
 mod state;
-
+mod systems;
 use crate::{prelude::*, state::State};
 
 fn main() -> BError {

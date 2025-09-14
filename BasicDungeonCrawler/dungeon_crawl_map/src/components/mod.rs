@@ -1,2 +1,3 @@
-mod Player;
-mod render;
+pub mod player;
+pub mod render;
+pub mod enemy;
