@@ -15,7 +15,7 @@ pub fn random_move(ecs: &mut SubWorld, #[resource] map: &Map) {
             3 => Point::new(-1, 0),
             _ => Point::new(0, 0),
         } + *pos;
-        print!("in {dest:?}");
+        
         if map.can_enter_tile(dest) {
             *pos = dest;
         }
