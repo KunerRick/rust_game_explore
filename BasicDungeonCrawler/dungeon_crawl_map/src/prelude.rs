@@ -1,5 +1,5 @@
 pub use crate::camera::*;
-pub use crate::components::{enemy::*, player::*, render::*};
+pub use crate::components::{enemy::*, player::*, render::*,moving_randomly::*};
 pub use crate::map::*;
 pub use crate::map_builder::*;
 pub use crate::model::*;
