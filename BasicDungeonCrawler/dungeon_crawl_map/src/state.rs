@@ -17,6 +17,8 @@ impl State {
         resources.insert(map_builder.map);
         // 将相机插入资源
         resources.insert(Camera::new(map_builder.player_start));
+        // 将回合的初始态插入
+        resources.insert(TurnState::AwaitingInput);
         // 生成一个玩家角色
         spawn_player(&mut ecs, map_builder.player_start);
         // 生成怪物,跳过第一个房间
