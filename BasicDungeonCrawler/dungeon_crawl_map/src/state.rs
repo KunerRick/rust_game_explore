@@ -3,7 +3,9 @@ use crate::prelude::*;
 pub struct State {
     ecs: World,
     resources: Resources,
-    systems: Schedule,
+    input_systems: Schedule,
+    player_systems: Schedule,
+    monster_systems: Schedule
 }
 
 impl State {
@@ -32,7 +34,9 @@ impl State {
         Self {
             ecs,
             resources,
-            systems: build_scheduler(),
+            input_systems: build_input_scheduler(),
+            player_systems: build_player_scheduler(),
+            monster_systems: build_monster_scheduler()
         }
     }
 }
@@ -45,8 +49,13 @@ impl GameState for State {
         ctx.cls();
         // 每次tick都要插入？
         self.resources.insert(ctx.key);
-        // 执行？
-        self.systems.execute(&mut self.ecs, &mut self.resources);
+        // 根据回合状态使用不同的调度器
+        let current_state = self.resources.get::<TurnState>().unwrap().clone();
+        match current_state {
+            TurnState::AwaitingInput=> self.input_systems.execute(&mut self.ecs, &mut self.resources),
+            TurnState::PlayerTurn=>self.player_systems.execute(&mut self.ecs, &mut self.resources),
+            TurnState::MonsterTurn=>self.monster_systems.execute(&mut self.ecs, &mut self.resources),
+        }
         // 批量绘制
         render_draw_buffer(ctx).expect("render error");
     }

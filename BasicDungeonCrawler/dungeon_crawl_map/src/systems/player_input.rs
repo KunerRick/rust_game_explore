@@ -22,6 +22,7 @@ pub fn player_input(
     #[resource] map: &Map,
     #[resource] key: &Option<VirtualKeyCode>,
     #[resource] camera: &mut Camera,
+    #[resource] turn_state: &mut TurnState
 ) {
     if let Some(key) = key {
         let delta = match key {
@@ -39,6 +40,8 @@ pub fn player_input(
                 if map.can_enter_tile(dest) {
                     *pos = dest;
                     camera.on_player_move(dest);
+                    // 转换回合状态,输入回合 -> 用户回合
+                    *turn_state = TurnState::PlayerTurn;
                 }
             });
         }
