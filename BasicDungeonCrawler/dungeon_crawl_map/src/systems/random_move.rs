@@ -1,10 +1,11 @@
-use crate::{components::wants_to_move::WantsToMove, prelude::*};
+use crate::prelude::*;
 
 #[system]
 #[write_component(Point)]
 #[read_component(MovingRandomly)]
 pub fn random_move(ecs: &mut SubWorld, commands: &mut CommandBuffer) {
-    let mut movers = <(&Entity, &Point, &MovingRandomly)>::query();
+    // 注意这里的Entity 不是引用，因为它就是一个标识，不存储在world里。
+    let mut movers = <(Entity, &Point, &MovingRandomly)>::query();
     movers.iter(ecs).for_each(|(entity, pos, _)| {
         let mut rng = RandomNumberGenerator::new();
         // 上 右 下 左
