@@ -1,4 +1,4 @@
-use crate::{components::m_player, prelude::*};
+use crate::prelude::*;
 
 trait Test {
     fn hello();
