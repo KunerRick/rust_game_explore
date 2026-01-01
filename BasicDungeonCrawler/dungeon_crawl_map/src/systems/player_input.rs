@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use crate::{components::wants_to_move::WantsToMove, prelude::*};
 
 trait Test {
     fn hello();
@@ -19,9 +19,8 @@ fn test() {
 #[read_component(Player)]
 pub fn player_input(
     ecs: &mut SubWorld,
-    #[resource] map: &Map,
+    commands: &mut CommandBuffer,
     #[resource] key: &Option<VirtualKeyCode>,
-    #[resource] camera: &mut Camera,
     #[resource] turn_state: &mut TurnState,
 ) {
     if let Some(key) = key {
@@ -33,13 +32,17 @@ pub fn player_input(
             _ => Point::new(0, 0),
         };
         if delta.x != 0 || delta.y != 0 {
-            let mut players = <&mut Point>::query().filter(component::<Player>());
-            players.iter_mut(ecs).for_each(|pos| {
-                let dest = *pos + delta;
-                if map.can_enter_tile(dest) {
-                    *pos = dest;
-                    camera.on_player_move(dest);
-                }
+            let mut players = <(Entity, &Point)>::query().filter(component::<Player>());
+            players.iter(ecs).for_each(|(entity, pos)| {
+                let destination = *pos + delta;
+                // 名义上是发送意图，但实现其实是把一个新的 实体插入到world中，留待movement系统去查询处理。
+                commands.push((
+                    (),
+                    WantsToMove {
+                        entity: *entity,
+                        destination,
+                    },
+                ));
             });
         }
         // 只要有用户输入，就转换回合状态,输入回合 -> 用户回合
