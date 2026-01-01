@@ -1,4 +1,4 @@
-use crate::{components::player, prelude::*};
+use crate::{components::m_player, prelude::*};
 
 trait Test {
     fn hello();
@@ -22,7 +22,7 @@ pub fn player_input(
     #[resource] map: &Map,
     #[resource] key: &Option<VirtualKeyCode>,
     #[resource] camera: &mut Camera,
-    #[resource] turn_state: &mut TurnState
+    #[resource] turn_state: &mut TurnState,
 ) {
     if let Some(key) = key {
         let delta = match key {
@@ -32,7 +32,6 @@ pub fn player_input(
             VirtualKeyCode::Down | VirtualKeyCode::S => Point::new(0, 1),
             _ => Point::new(0, 0),
         };
-
         if delta.x != 0 || delta.y != 0 {
             let mut players = <&mut Point>::query().filter(component::<Player>());
             players.iter_mut(ecs).for_each(|pos| {
@@ -40,10 +39,10 @@ pub fn player_input(
                 if map.can_enter_tile(dest) {
                     *pos = dest;
                     camera.on_player_move(dest);
-                    // 转换回合状态,输入回合 -> 用户回合
-                    *turn_state = TurnState::PlayerTurn;
                 }
             });
         }
+        // 只要有用户输入，就转换回合状态,输入回合 -> 用户回合
+        *turn_state = TurnState::PlayerTurn;
     }
 }
