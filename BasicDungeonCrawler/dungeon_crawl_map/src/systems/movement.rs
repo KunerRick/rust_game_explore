@@ -11,8 +11,6 @@ pub fn movement(
     ecs: &mut SubWorld,
     commands: &mut CommandBuffer,
 ) {
-
-    println!("movement {:?}",want_move.entity);
     // 判断是否能移动，能移动则进行实体替换
     if map.can_enter_tile(want_move.destination) {
         // 含义： 给 实体 entity 增加 Point 组件，相当于修改实体的位置信息，如果已存在，会替换掉

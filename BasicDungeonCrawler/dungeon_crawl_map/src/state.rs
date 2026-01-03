@@ -47,7 +47,9 @@ impl GameState for State {
         ctx.cls();
         ctx.set_active_console(1);
         ctx.cls();
-        // 每次tick都要插入？
+        ctx.set_active_console(2);
+        ctx.cls();
+        // 每次tick都要插入，是的，每次都要传入当前帧用户的按键输入，以便有系统进行处理
         self.resources.insert(ctx.key);
         // 根据回合状态使用不同的调度器
         let current_state = self.resources.get::<TurnState>().unwrap().clone();

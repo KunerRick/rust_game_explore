@@ -5,20 +5,22 @@ mod map_render;
 mod player_input;
 mod random_move;
 mod movement;
+mod hud;
 use crate::prelude::*;
 
 pub fn build_input_scheduler() -> Schedule {
-    // 输入调度，用户输入、渲染地图、渲染实体
+    // 输入调度，用户输入、渲染地图、渲染hud、渲染实体
     Schedule::builder()
         .add_system(player_input::player_input_system())
         .flush()
         .add_system(map_render::map_render_system())
         .add_system(entity_render::entity_render_system())
+        .add_system(hud::hud_system())
         .build()
 }
 
 pub fn build_player_scheduler()-> Schedule {
-    // 碰撞系统判定、渲染地图、渲染实体、回合轮转
+    // 碰撞系统判定、渲染地图、渲染实体、渲染hud、回合轮转
     Schedule::builder()
     .add_system(movement::movement_system())
     .flush()
@@ -26,12 +28,13 @@ pub fn build_player_scheduler()-> Schedule {
     .flush()
     .add_system(map_render::map_render_system())
     .add_system(entity_render::entity_render_system())
+    .add_system(hud::hud_system())
     .add_system(end_turn::end_turn_system())
     .build()
 }
 
 pub fn build_monster_scheduler()-> Schedule {
-    // 随机移动、碰撞检测、地图、实体、回合轮转
+    // 随机移动、碰撞检测、地图、实体、渲染hud、回合轮转
     Schedule::builder()
     .add_system(random_move::random_move_system())
     .flush()
@@ -41,6 +44,7 @@ pub fn build_monster_scheduler()-> Schedule {
     .flush()
     .add_system(map_render::map_render_system())
     .add_system(entity_render::entity_render_system())
+    .add_system(hud::hud_system())
     .add_system(end_turn::end_turn_system())
     .build()
 }

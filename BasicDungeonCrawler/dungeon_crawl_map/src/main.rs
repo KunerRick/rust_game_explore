@@ -18,10 +18,13 @@ fn main() -> BError {
         .with_tile_dimensions(32, 32)
         .with_resource_path("resources/")
         .with_font("dungeonfont.png", 32, 32)
+        .with_font("terminal8x8.png", 8, 8)
         // 绘制地图
         .with_simple_console(DISPLAY_WIDTH, DISPLAY_HEIGHT, "dungeonfont.png")
         // 绘制角色
         .with_simple_console_no_bg(DISPLAY_WIDTH, DISPLAY_HEIGHT, "dungeonfont.png")
+        // 绘制信息层, 两倍缩放，可以放更多的字体，后续可测试
+        .with_simple_console_no_bg(DISPLAY_WIDTH * 2, DISPLAY_HEIGHT * 2, "terminal8x8.png")
         .build()?;
     main_loop(context, State::new())
 }

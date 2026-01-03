@@ -1,8 +1,9 @@
 pub use crate::camera::*;
-pub use crate::components::{enemy::*, moving_randomly::*, player::*, render::*, wants_to_move::*};
+pub use crate::components::{
+    enemy::*, health::*, moving_randomly::*, player::*, render::*, wants_to_move::*,
+};
 pub use crate::map::*;
 pub use crate::map_builder::*;
-pub use crate::model::*;
 pub use crate::spawner::*;
 pub use crate::systems::*;
 pub use crate::turn_state::*;
